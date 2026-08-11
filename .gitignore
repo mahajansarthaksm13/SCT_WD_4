@@ -1,0 +1,22 @@
+# Local agent/editor tooling, not part of the project.
+.claude/
+
+# Safety net. `tally/.gitignore` already anchors these to the app directory;
+# this catches anything that lands outside it.
+node_modules/
+.next/
+out/
+build/
+test-results/
+playwright-report/
+blob-report/
+*.tsbuildinfo
+
+# Never commit real environment files. `tally/.env.example` is the documented
+# shape and is committed on purpose.
+.env
+.env.local
+.env*.local
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#0A2540"/>
+  <!-- Two settled entries, ruled off, and one still open: the ledger. -->
+  <path d="M8 11h7M8 17h7M8 23h7" stroke="#6E92B0" stroke-width="2" stroke-linecap="round"/>
+  <path d="M18.5 11.5l2.2 2.2 4.3-4.3" stroke="#C7DDEB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M18.5 17.5l2.2 2.2 4.3-4.3" stroke="#C7DDEB" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <circle cx="21.5" cy="23" r="3" stroke="#6E92B0" stroke-width="2" fill="none"/>
+</svg>

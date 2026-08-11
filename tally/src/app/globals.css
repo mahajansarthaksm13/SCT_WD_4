@@ -1,0 +1,834 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Tally — Navy & Powder
+
+   Two colours, and everything else derived from them. A palette this narrow
+   is what makes a thing read as expensive: one hue, held all the way down.
+
+     #0A2540  navy    the deep ground at night, and the ink and the
+                      interactive colour by day.
+     #C7DDEB  powder  the ground by day, and the ink and the gilt at night.
+
+   Navy is the default; powder is the same room with the shutters open, not
+   a different one. Every remaining token is one of those two lifted,
+   dropped, or thinned to an alpha — no third hue is introduced anywhere
+   except the single warning tint, which has a job no blue can do.
+
+   The surfaces are glass. Every panel is a pane held above the ground: it
+   lets the colour behind it through, blurs and slightly over-saturates what
+   it catches, and takes a bright frosted hairline along its top edge where
+   the light lands. Wells are the same glass pressed *into* the page instead
+   of raised off it; buttons still physically depress. Gilt is used the way
+   real gilding is — a hairline, an edge, never a fill.
+
+   The translucency is deliberately held at ~0.66 alpha rather than the 0.2
+   the effect is usually drawn at. Composited over a ground of the same hue
+   that is still glass; composited over anything else it is a legibility bug
+   waiting for the one user whose wallpaper shows through. Every text pair
+   in here clears WCAG AA *as flattened*, so nothing depends on the blur
+   landing — a browser without `backdrop-filter` loses the effect and keeps
+   every contrast ratio.
+
+   Lateness is never signalled by colour alone. An overdue task carries four
+   cues at once: the wording, a bar at its leading edge, the tint, and its
+   position at the top of Today. It survives being read in greyscale.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@theme static {
+  /* ── Navy: the default ground ───────────────────────────────────── */
+  --color-paper: #0a2540;
+  /* Glass. Panes, not fills — the alpha is the whole point. */
+  --color-surface: rgb(22 55 90 / 0.66);
+  --color-surface-sunk: rgb(5 18 33 / 0.55);
+  --color-ink: #c7ddeb;
+  --color-ink-2: #b4cddf;
+  --color-ink-3: #8fabc4;
+  /* Rules are powder thinned to a hairline, so an edge reads as light
+     catching the rim of a pane rather than as a drawn border. */
+  --color-rule: rgb(199 221 235 / 0.14);
+  --color-rule-strong: rgb(199 221 235 / 0.34);
+  --color-accent: #c7ddeb;
+  --color-accent-hover: #e2f0f9;
+  --color-accent-soft: rgb(199 221 235 / 0.18);
+  --color-on-accent: #0a2540;
+  --color-gilt: #c7ddeb;
+  /* The one warm note in the file. Blue cannot own "late" in a palette
+     that is blue from end to end, and this still clears AA on the glass. */
+  --color-overdue: #f0a08c;
+  --color-overdue-soft: rgb(240 160 140 / 0.14);
+
+  /* ── Type ───────────────────────────────────────────────────────── */
+  --font-ui: var(--font-switzer), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  /* A high-contrast didone. Thick-to-thin strokes are the oldest signal
+     of engraved, expensive printing, and it is doing that job alone. */
+  --font-display: var(--font-zodiak), "Times New Roman", serif;
+
+  --text-display: 34px;
+  --text-display--line-height: 40px;
+  --text-display--letter-spacing: -0.01em;
+  --text-display--font-weight: 400;
+
+  --text-title: 24px;
+  --text-title--line-height: 30px;
+  --text-title--letter-spacing: 0;
+  --text-title--font-weight: 400;
+
+  /* Must stay ≥16px: iOS Safari zooms the viewport below it and never
+     zooms back, which directly damages the sub-10s capture goal. */
+  --text-input: 16px;
+  --text-input--line-height: 24px;
+
+  --text-body: 15px;
+  --text-body--line-height: 22px;
+
+  --text-meta: 13px;
+  --text-meta--line-height: 18px;
+
+  --text-mono: 13px;
+  --text-mono--line-height: 18px;
+  --text-mono--letter-spacing: 0.02em;
+
+  --text-label: 11px;
+  --text-label--line-height: 14px;
+  --text-label--letter-spacing: 0.12em;
+  --text-label--font-weight: 550;
+
+  /* ── Radius ─────────────────────────────────────────────────────── */
+  --radius-sm: 7px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* ── Layout ─────────────────────────────────────────────────────── */
+  --spacing-sidebar: 272px;
+  --spacing-content: 720px;
+  /* The same 720px measure, plus the completed column and the gap between
+     them. Applied only above 1280px, where the second column exists. */
+  --spacing-content-split: 1052px;
+  --spacing-gutter: 64px;
+  --spacing-gutter-sm: 52px;
+
+  /* ── Motion ─────────────────────────────────────────────────────── */
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-tick: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Material — the light model
+
+   One light source, high and slightly forward. Raised things take a bright
+   line along their top edge and cast downward; pressed things take a dark
+   line along their top inner edge and a highlight along the bottom. Getting
+   those two backwards is what makes skeuomorphism look cheap.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* The frosted rim along the top of a pane, and the shadow it drops. Both
+     are tinted navy rather than neutral: a black shadow under blue glass
+     reads as dirt, and a white rim reads as plastic. */
+  --edge-light: rgb(199 221 235 / 0.22);
+  --edge-dark: rgb(2 10 20 / 0.5);
+  --cast: rgb(2 10 20 / 0.62);
+
+  /* A panel sitting on the page. */
+  --shadow-raise:
+    inset 0 1px 0 var(--edge-light),
+    inset 0 -1px 0 var(--edge-dark),
+    0 1px 2px rgb(2 10 20 / 0.3),
+    0 12px 28px -10px var(--cast);
+
+  /* A panel lifted further — dialogs, menus, the toast. */
+  --shadow-lift:
+    inset 0 1px 0 var(--edge-light),
+    inset 0 -1px 0 var(--edge-dark),
+    0 2px 4px rgb(2 10 20 / 0.34),
+    0 28px 60px -18px rgb(2 10 20 / 0.8);
+
+  /* A well pressed into the page — inputs, notes, the completed shelf. */
+  --shadow-well:
+    inset 0 2px 6px rgb(2 10 20 / 0.45),
+    inset 0 -1px 0 rgb(199 221 235 / 0.09);
+
+  /* A row lifting under the cursor. */
+  --shadow-hover:
+    inset 0 1px 0 rgb(199 221 235 / 0.12),
+    0 6px 16px -8px rgb(2 10 20 / 0.65);
+
+  /* Tailwind's own shadow scale, remapped so utilities inherit the model. */
+  --shadow-sm: var(--shadow-hover);
+  --shadow-md: var(--shadow-raise);
+  --shadow-lg: var(--shadow-lift);
+
+  /* The sheen every pane carries: brighter at the top, settling to nothing
+     by a third of the way down. On glass this is the reflection, so it is
+     powder rather than white — the pane is tinted, and so is what it
+     reflects. */
+  --sheen: linear-gradient(
+    180deg,
+    rgb(199 221 235 / 0.07) 0%,
+    rgb(199 221 235 / 0.018) 34%,
+    rgb(2 10 20 / 0.06) 100%
+  );
+
+  /*
+   * Named because Tailwind cannot take them inline: a `/` inside an arbitrary
+   * value is read as the opacity modifier, so `shadow-[...rgb(0_0_0/0.4)]`
+   * parses as nonsense and silently emits nothing at all. Declaring the whole
+   * shadow here and referencing it as a single variable sidesteps that, and
+   * keeps the light model in one file besides.
+   */
+
+  /* A filled checkbox: a domed stud, lit from above. */
+  --shadow-stud:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 1px 3px rgb(2 10 20 / 0.45);
+
+  /* An empty checkbox: a socket pressed into the row. */
+  --shadow-socket:
+    inset 0 1px 3px rgb(2 10 20 / 0.4),
+    0 1px 0 var(--edge-light);
+
+  /* A button at rest, and the same button held down. */
+  --shadow-button:
+    inset 0 1px 0 rgb(199 221 235 / 0.3),
+    inset 0 -1px 0 rgb(2 10 20 / 0.26),
+    0 2px 3px rgb(2 10 20 / 0.3),
+    0 8px 18px -8px var(--cast);
+  --shadow-button-press:
+    inset 0 2px 5px rgb(2 10 20 / 0.45),
+    inset 0 -1px 0 rgb(199 221 235 / 0.14);
+
+  /* The curve of light across a pressable face. */
+  --sheen-button: linear-gradient(
+    180deg,
+    rgb(199 221 235 / 0.22) 0%,
+    rgb(199 221 235 / 0) 58%,
+    rgb(2 10 20 / 0.12) 100%
+  );
+
+  /* The sidebar's inner edge, and the pip on a selected count badge. */
+  --shadow-recess: inset -10px 0 18px -16px rgb(2 10 20 / 0.9);
+  --shadow-pip: inset 0 1px 0 rgb(199 221 235 / 0.45);
+  --shadow-engrave: inset 0 1px 3px rgb(2 10 20 / 0.34);
+
+  /*
+   * The rim on something that floats.
+   *
+   * `--color-rule` is a hairline meant for panes sitting *in* the page, where
+   * the page itself already says where they are. An overlay has no such help:
+   * it is glass over glass in the same hue, and measured, the popover's edge
+   * came to 1.8:1 against what was behind it — a panel you have to hunt for.
+   * WCAG 1.4.11 asks 3:1 of any boundary needed to identify a component, and
+   * a floating one is the clearest case there is.
+   */
+  --color-rule-overlay: rgb(199 221 235 / 0.42);
+
+  /* Gilding: a hairline that catches the light across the top of a pane. */
+  --gilt-line: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(199 221 235 / 0.3) 22%,
+    rgb(226 240 249 / 0.72) 50%,
+    rgb(199 221 235 / 0.3) 78%,
+    transparent 100%
+  );
+
+  /* How much glass a pane is. One number, so every pane refracts alike and
+     the whole surface reads as a single material. Saturation is pushed past
+     1 on purpose: real glass concentrates the colour it transmits. */
+  --glass: blur(22px) saturate(160%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Milk — the daylight version
+
+   Not an inversion. Plum becomes the ink, milk becomes the paper, and the
+   light model softens: paper scatters light, so its shadows are warm, wide
+   and shallow rather than deep and black.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="mahogany"]) {
+    --color-paper: #c7ddeb;
+    /* Clear glass over a coloured ground, which is the daylight version of
+       the same material: the pane is near-white and lets the powder
+       through, rather than being painted a lighter powder. */
+    --color-surface: rgb(255 255 255 / 0.66);
+    --color-surface-sunk: rgb(10 37 64 / 0.07);
+    --color-ink: #0a2540;
+    --color-ink-2: #35526e;
+    --color-ink-3: #3f5a74;
+    --color-rule: rgb(10 37 64 / 0.12);
+    --color-rule-strong: rgb(10 37 64 / 0.32);
+    --color-accent: #0a2540;
+    --color-accent-hover: #06182b;
+    --color-accent-soft: rgb(10 37 64 / 0.14);
+    --color-on-accent: #eaf3f9;
+    /* A deeper steel than the navy theme's gilt. Powder that reads as light
+       on a dark ground is far too pale to be legible on powder itself, and
+       this is used for the gutter time — which is text, not ornament. */
+    --color-gilt: #1d4e7a;
+    --color-overdue: #a8241a;
+    --color-overdue-soft: rgb(168 36 26 / 0.1);
+
+    --edge-light: rgb(255 255 255 / 0.95);
+    --edge-dark: rgb(10 37 64 / 0.12);
+    --cast: rgb(10 37 64 / 0.22);
+
+    --shadow-well:
+      inset 0 2px 5px rgb(10 37 64 / 0.14),
+      inset 0 -1px 0 rgb(255 255 255 / 0.8);
+
+    --shadow-hover:
+      inset 0 1px 0 rgb(255 255 255 / 0.9),
+      0 6px 16px -8px rgb(10 37 64 / 0.26);
+
+    --shadow-stud:
+      inset 0 1px 0 rgb(255 255 255 / 0.34),
+      0 1px 3px rgb(10 37 64 / 0.3);
+    --shadow-socket:
+      inset 0 1px 3px rgb(10 37 64 / 0.18),
+      0 1px 0 rgb(255 255 255 / 0.95);
+    --shadow-button:
+      inset 0 1px 0 rgb(255 255 255 / 0.8),
+      inset 0 -1px 0 rgb(10 37 64 / 0.1),
+      0 1px 2px rgb(10 37 64 / 0.14),
+      0 8px 18px -10px rgb(10 37 64 / 0.3);
+    --shadow-button-press:
+      inset 0 2px 5px rgb(10 37 64 / 0.22),
+      inset 0 -1px 0 rgb(255 255 255 / 0.65);
+    --sheen-button: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.6) 0%,
+      rgb(255 255 255 / 0) 58%,
+      rgb(10 37 64 / 0.06) 100%
+    );
+
+    --sheen: linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.75) 0%,
+      rgb(255 255 255 / 0.24) 40%,
+      rgb(10 37 64 / 0.035) 100%
+    );
+
+    --gilt-line: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgb(29 78 122 / 0.2) 22%,
+      rgb(29 78 122 / 0.44) 50%,
+      rgb(29 78 122 / 0.2) 78%,
+      transparent 100%
+    );
+
+    /* Near-opaque here, and it has to be: a white pane on a powder ground has
+       so little of its own contrast that only a properly drawn navy rim
+       separates the two. */
+    --color-rule-overlay: rgb(10 37 64 / 0.8);
+
+    color-scheme: light;
+  }
+}
+
+:root[data-theme="porcelain"] {
+  --color-paper: #c7ddeb;
+  --color-surface: rgb(255 255 255 / 0.66);
+  --color-surface-sunk: rgb(10 37 64 / 0.07);
+  --color-ink: #0a2540;
+  --color-ink-2: #35526e;
+  --color-ink-3: #3f5a74;
+  --color-rule: rgb(10 37 64 / 0.12);
+  --color-rule-strong: rgb(10 37 64 / 0.32);
+  --color-accent: #0a2540;
+  --color-accent-hover: #06182b;
+  --color-accent-soft: rgb(10 37 64 / 0.14);
+  --color-on-accent: #eaf3f9;
+  /* A deeper steel than the navy theme's gilt. Powder that reads as light
+     on a dark ground is far too pale to be legible on powder itself, and
+     this is used for the gutter time — which is text, not ornament. */
+  --color-gilt: #1d4e7a;
+  --color-overdue: #a8241a;
+  --color-overdue-soft: rgb(168 36 26 / 0.1);
+
+  --edge-light: rgb(255 255 255 / 0.95);
+  --edge-dark: rgb(10 37 64 / 0.12);
+  --cast: rgb(10 37 64 / 0.22);
+
+  --shadow-well:
+    inset 0 2px 5px rgb(10 37 64 / 0.14),
+    inset 0 -1px 0 rgb(255 255 255 / 0.8);
+
+  --shadow-hover:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 6px 16px -8px rgb(10 37 64 / 0.26);
+
+  --shadow-stud:
+    inset 0 1px 0 rgb(255 255 255 / 0.34),
+    0 1px 3px rgb(10 37 64 / 0.3);
+  --shadow-socket:
+    inset 0 1px 3px rgb(10 37 64 / 0.18),
+    0 1px 0 rgb(255 255 255 / 0.95);
+  --shadow-button:
+    inset 0 1px 0 rgb(255 255 255 / 0.8),
+    inset 0 -1px 0 rgb(10 37 64 / 0.1),
+    0 1px 2px rgb(10 37 64 / 0.14),
+    0 8px 18px -10px rgb(10 37 64 / 0.3);
+  --shadow-button-press:
+    inset 0 2px 5px rgb(10 37 64 / 0.22),
+    inset 0 -1px 0 rgb(255 255 255 / 0.65);
+  --sheen-button: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.6) 0%,
+    rgb(255 255 255 / 0) 58%,
+    rgb(10 37 64 / 0.06) 100%
+  );
+
+  --sheen: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.75) 0%,
+    rgb(255 255 255 / 0.24) 40%,
+    rgb(10 37 64 / 0.035) 100%
+  );
+
+  --gilt-line: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(29 78 122 / 0.2) 22%,
+    rgb(29 78 122 / 0.44) 50%,
+    rgb(29 78 122 / 0.2) 78%,
+    transparent 100%
+  );
+
+  /* Near-opaque here, and it has to be: a white pane on a powder ground has
+     so little of its own contrast that only a properly drawn navy rim
+     separates the two. */
+  --color-rule-overlay: rgb(10 37 64 / 0.8);
+
+  color-scheme: light;
+}
+
+:root[data-theme="mahogany"] {
+  color-scheme: dark;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Base
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    color: var(--color-ink);
+    font-family: var(--font-ui);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+
+    /* Not a flat fill, and on glass it cannot be: a pane with nothing behind
+       it is just a lighter rectangle. A pool of light above the capture
+       field, a steel bloom off to one side, and a deepening toward the
+       bottom — three things for the panes to actually catch and bend. */
+    background-color: var(--color-paper);
+    background-image:
+      radial-gradient(
+        120% 80% at 50% -14%,
+        rgb(199 221 235 / 0.1) 0%,
+        transparent 62%
+      ),
+      radial-gradient(
+        70% 55% at 14% 10%,
+        rgb(29 78 122 / 0.5) 0%,
+        transparent 72%
+      ),
+      radial-gradient(
+        90% 60% at 50% 108%,
+        rgb(2 10 20 / 0.55) 0%,
+        transparent 70%
+      );
+    background-attachment: fixed;
+  }
+
+  [data-theme="porcelain"] body,
+  :root:not([data-theme="mahogany"]) body {
+    background-image:
+      radial-gradient(
+        120% 80% at 50% -14%,
+        rgb(255 255 255 / 0.9) 0%,
+        transparent 60%
+      ),
+      radial-gradient(
+        70% 55% at 14% 10%,
+        rgb(255 255 255 / 0.55) 0%,
+        transparent 72%
+      ),
+      radial-gradient(
+        90% 60% at 50% 108%,
+        rgb(10 37 64 / 0.14) 0%,
+        transparent 70%
+      );
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="porcelain"]) body {
+      background-image:
+        radial-gradient(
+          120% 80% at 50% -14%,
+          rgb(199 221 235 / 0.1) 0%,
+          transparent 62%
+        ),
+        radial-gradient(
+          70% 55% at 14% 10%,
+          rgb(29 78 122 / 0.5) 0%,
+          transparent 72%
+        ),
+        radial-gradient(
+          90% 60% at 50% 108%,
+          rgb(2 10 20 / 0.55) 0%,
+          transparent 70%
+        );
+    }
+  }
+
+  /*
+   * A fine grain over everything, fixed to the viewport so it reads as the
+   * texture of the material rather than something printed on the content.
+   * It is what stops large flat areas of plum looking like a screen fill.
+   */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.05;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Focus is never removed — only ever replaced. A gilt ring, so it belongs
+     to the material rather than sitting on top of it. */
+  :focus-visible {
+    outline: 2px solid var(--color-gilt);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-ink);
+  }
+
+  ::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 120ms ease;
+  }
+  ::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+  :root:not([data-theme="porcelain"]) ::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="mahogany"]) ::-webkit-calendar-picker-indicator {
+      filter: none;
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Material utilities
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A pane of glass held above the page.
+ *
+ * The blur lives here, on the panels, the overlays and the sidebar — never on
+ * a task row. `backdrop-filter` costs a fresh snapshot of everything behind
+ * the element on every frame it changes; four of them is a look, five thousand
+ * of them is a scroll that drops to single-digit frames. The list is one pane
+ * with rows inside it, not five thousand panes.
+ */
+.panel {
+  position: relative;
+  background-color: var(--color-surface);
+  background-image: var(--sheen);
+  border: 1px solid var(--color-rule);
+  box-shadow: var(--shadow-raise);
+  -webkit-backdrop-filter: var(--glass);
+  backdrop-filter: var(--glass);
+}
+
+/* The gilt hairline along a panel's top edge. */
+.gilded::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background-image: var(--gilt-line);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Something pressed into the page. */
+.well {
+  background-color: var(--color-surface-sunk);
+  box-shadow: var(--shadow-well);
+  border: 1px solid var(--color-rule);
+}
+
+/*
+ * The rest of the material, as plain classes rather than Tailwind utilities.
+ *
+ * `shadow-[…]` cannot carry these: the utility decomposes its value so it can
+ * substitute a shadow colour, and a multi-layer shadow arriving as a single
+ * `var()` defeats that — Tailwind quietly emits nothing at all rather than
+ * failing. Every one of these was silently flat until it was written out here.
+ */
+
+/* A pressable face: lit across the top, and genuinely pushed in on press. */
+.raised {
+  background-image: var(--sheen-button);
+  box-shadow: var(--shadow-button);
+}
+.raised:active:not(:disabled) {
+  box-shadow: var(--shadow-button-press);
+}
+
+/* A filled checkbox — a domed stud. */
+.stud {
+  background-image: var(--sheen-button);
+  box-shadow: var(--shadow-stud);
+}
+
+/* An empty checkbox — a socket waiting for one. */
+.socket {
+  box-shadow: var(--shadow-socket);
+}
+
+/* The sidebar, set back into the page — smoked glass rather than clear. */
+.recessed {
+  box-shadow: var(--shadow-recess);
+  -webkit-backdrop-filter: var(--glass);
+  backdrop-filter: var(--glass);
+}
+
+/* A small badge catching the light. */
+.pip {
+  box-shadow: var(--shadow-pip);
+}
+
+/* A line pressed into a surface — the inline title editor. */
+.engrave-in {
+  box-shadow: var(--shadow-engrave);
+}
+
+/* A row lifting under the cursor. */
+.lift-on-hover:hover {
+  box-shadow: var(--shadow-hover);
+}
+
+/* Overlays — dialogs, menus, popovers, the toast — sit further off the page,
+   so they take a heavier blur: more glass between them and what they cover,
+   and a rim strong enough to say where the glass ends. Declared after `.panel`
+   deliberately: both are single classes, so source order is what lets this
+   border win over the hairline `.panel` sets. */
+.lifted {
+  border-color: var(--color-rule-overlay);
+  box-shadow: var(--shadow-lift);
+  -webkit-backdrop-filter: blur(30px) saturate(170%);
+  backdrop-filter: blur(30px) saturate(170%);
+}
+
+/*
+ * Focus, for anything pressed into the page. The well keeps its depth and
+ * gains a gilt ring around it, so focus reads as the light finding the recess
+ * rather than as a rectangle drawn over the top of it.
+ */
+.well:focus,
+.well:focus-visible {
+  border-color: var(--color-gilt);
+  outline: none;
+  box-shadow:
+    var(--shadow-well),
+    0 0 0 3px color-mix(in srgb, var(--color-gilt) 26%, transparent);
+}
+
+/* The capture field alone also lights from within. It is the one thing on the
+   page you are meant to reach for. */
+.well--hero:focus,
+.well--hero:focus-visible {
+  box-shadow:
+    var(--shadow-well),
+    0 0 0 3px color-mix(in srgb, var(--color-gilt) 30%, transparent),
+    0 0 26px -6px color-mix(in srgb, var(--color-gilt) 45%, transparent);
+}
+
+/* Engraved text: a dark line above, a light one below. Used sparingly, on
+   the wordmark and the section labels, where type is standing in for
+   something stamped rather than printed. */
+.engraved {
+  text-shadow:
+    0 -1px 0 rgb(2 10 20 / 0.5),
+    0 1px 0 rgb(199 221 235 / 0.12);
+}
+
+:root[data-theme="porcelain"] .engraved,
+:root:not([data-theme="mahogany"]) .engraved {
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 0.95),
+    0 -1px 0 rgb(10 37 64 / 0.14);
+}
+
+@layer utilities {
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* The signature element: every digit the same width, so the times stack
+     into a single vertical spine down the page. */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Titles wrap to two lines, then truncate. */
+  .clamp-2 {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Touch targets
+
+   Grows a control's hit area to the 44px minimum on touch devices without
+   changing a pixel of how it looks. Used where the visible mark has to stay
+   small: a 44px checkbox would swamp the row it lives in.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.tap-target {
+  position: relative;
+}
+
+@media (pointer: coarse) {
+  .tap-target::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    min-width: 44px;
+    min-height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Motion. Nothing animates on page load.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes tally-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tally-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97) translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes tally-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes tally-slide-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes tally-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tally-drain {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
