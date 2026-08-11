@@ -2,6 +2,7 @@
 
 import { Dialog as RadixDialog } from "radix-ui";
 import { useEffect, useMemo, useRef } from "react";
+import { ActivityView } from "@/features/activity/ActivityView";
 import { ListView } from "@/features/lists/ListView";
 import { Sidebar } from "@/features/lists/Sidebar";
 import { SearchView } from "@/features/search/SearchView";
@@ -110,14 +111,18 @@ export function AppShell() {
       ? "Today"
       : activeView.type === "search"
         ? "Search"
-        : (activeList?.name ?? "Inbox");
+        : activeView.type === "activity"
+          ? "Activity"
+          : (activeList?.name ?? "Inbox");
 
   const headingCount =
     activeView.type === "today"
       ? selectTodayCount(tasks, now, tz)
-      : activeList
-        ? selectOpenCount(tasks, activeList.id)
-        : 0;
+      : activeView.type === "activity"
+        ? 0
+        : activeList
+          ? selectOpenCount(tasks, activeList.id)
+          : 0;
 
   return (
     <div className="flex h-dvh overflow-hidden bg-paper">
@@ -199,8 +204,11 @@ export function AppShell() {
           <ErrorNotice />
 
           {/* The capture field sits above everything, in every view, always
-              visible — including on every empty state. */}
-          {activeView.type !== "search" ? (
+              visible — including on every empty state. Search and Activity are
+              the two exceptions: both are for looking at what already exists,
+              and a capture field there would be a second thing competing for
+              the same keystrokes. */}
+          {activeView.type !== "search" && activeView.type !== "activity" ? (
             <div className="pb-6">
               <TaskInput listId={captureListId} />
             </div>
@@ -214,6 +222,8 @@ export function AppShell() {
             <SearchView tasks={tasks} lists={lists} query={searchQuery} />
           ) : activeView.type === "today" ? (
             <TodayView tasks={tasks} lists={lists} />
+          ) : activeView.type === "activity" ? (
+            <ActivityView tasks={tasks} lists={lists} />
           ) : activeList ? (
             <ListView
               list={activeList}

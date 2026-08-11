@@ -88,6 +88,8 @@ export function TaskRow({
   rowStyle,
 }: TaskRowProps) {
   const tz = getUserTimezone();
+  // Captured once so the unmount cleanup below has an id it can trust.
+  const taskId = task.id;
   const editTask = useTaskStore((s) => s.editTask);
   const toggleComplete = useTaskStore((s) => s.toggleComplete);
   const removeTask = useTaskStore((s) => s.removeTask);
@@ -108,11 +110,30 @@ export function TaskRow({
   const [pendingComplete, setPendingComplete] = useState<boolean | null>(null);
   const optimisticComplete = pendingComplete ?? task.isComplete;
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** The same value as `pendingComplete`, readable from the unmount cleanup. */
+  const pendingRef = useRef<boolean | null>(null);
 
+  /**
+   * A tick that has not settled yet still has to land.
+   *
+   * The row can leave before its four hundred milliseconds are up — switch
+   * list, open Activity, hit a keyboard shortcut — and simply clearing the
+   * timer on the way out threw the completion away. The checkbox filled, the
+   * row vanished, and the task was still open when you came back.
+   *
+   * So unmounting commits instead of cancelling. `getState()` rather than the
+   * action from the hook: this runs after the component is gone, and a closure
+   * captured at mount is exactly the wrong thing to trust at that point.
+   */
   useEffect(
     () => () => {
-      if (settleTimer.current) clearTimeout(settleTimer.current);
+      if (!settleTimer.current) return;
+      clearTimeout(settleTimer.current);
+      if (pendingRef.current !== null) {
+        void useTaskStore.getState().toggleComplete(taskId);
+      }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- unmount only
     [],
   );
 
@@ -136,9 +157,11 @@ export function TaskRow({
     if (settleTimer.current) clearTimeout(settleTimer.current);
     const next = !optimisticComplete;
     setPendingComplete(next);
+    pendingRef.current = next;
 
     settleTimer.current = setTimeout(() => {
       settleTimer.current = null;
+      pendingRef.current = null;
       setPendingComplete(null);
       void toggleComplete(task.id);
     }, SETTLE_MS);

@@ -69,6 +69,19 @@ list, grouped by the day it was actually done. Below that it collapses to a
 fold-down under the list, which is where it has always been and works down to
 360px.
 
+**Activity.** A year of days, one square each, darkest where the most got
+finished. A to-do list only ever shows the present tense — what is left — and
+is therefore very good at making a productive month feel like nothing happened;
+this is the other half of the record. Clicking a square opens that day: what
+was completed on it, and what was due on it and was not.
+
+The two counts are deliberately not halves of one number. **Completed** is
+bucketed by when the work was actually done. **Outstanding** is bucketed by the
+due date and asks what that day still owed when it ended — so a task due Monday
+and finished Thursday is outstanding on Monday *and* completed on Thursday. A
+day that ended owing something is ringed rather than recoloured, because a
+second hue would compete with the one the whole grid is built on.
+
 **Undo, not confirm.** Deleting takes one click and no dialog. A five-second
 undo sits at the bottom of the screen. A confirmation prompt taxes the
 ninety-nine deletions in a hundred that were meant, to guard the one that was
@@ -99,7 +112,7 @@ src/
     bundle.ts        Import validation — the one untrusted input
     local/           IndexedDB (Dexie), plus an in-memory fallback
   store/           Zustand state, optimistic writes, pure selectors
-  features/        tasks/ lists/ today/ search/ data/
+  features/        tasks/ lists/ today/ activity/ search/ data/
   components/      Generic pieces with no domain knowledge
   lib/             dates, ordering, ids, keyboard, the shared clock
 ```
@@ -146,10 +159,10 @@ against.
 
 Tests run on Node's own test runner with Node 24's built-in type stripping. No
 test framework, no bundler, no extra dependency; `tests/resolver.mjs` teaches the
-loader the `@/` alias in about thirty lines. **122 unit tests** cover the dates,
-ordering, recurrence, import validation, repository contract, selectors and the
-store — including the optimistic-rollback path, which is the one place the
-screen and the database can disagree.
+loader the `@/` alias in about thirty lines. **131 unit tests** cover the dates,
+ordering, recurrence, activity bucketing, import validation, repository contract,
+selectors and the store — including the optimistic-rollback path, which is the
+one place the screen and the database can disagree.
 
 The recurrence set is worth naming, because each case is one that a naive
 implementation gets wrong and no amount of clicking around finds: a daily task
@@ -159,7 +172,7 @@ falling back to the 28th, a date-only task not sliding a day for users west of
 UTC, and a task finished three weeks late producing one occurrence rather than
 three.
 
-**22 end-to-end tests** run against a production build on Chromium, WebKit and
+**28 end-to-end tests** run against a production build on Chromium, WebKit and
 mobile Safari (Firefox is configured but could not launch in this environment).
 They cover what only a real browser can answer: that IndexedDB survives a
 reload, that Enter genuinely commits, that nothing logs to the console, that

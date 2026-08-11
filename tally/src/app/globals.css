@@ -563,7 +563,21 @@
 
 /* ═══════════════════════════════════════════════════════════════════════
    Material utilities
+
+   All of it inside `@layer components`, and that is not cosmetic.
+
+   Unlayered CSS beats anything in a layer, no matter how specific. These
+   classes were unlayered, so `.panel { position: relative }` was quietly
+   winning against Tailwind's `fixed` utility on every element carrying both —
+   which is every dialog in the app. They rendered `position: relative`, in
+   document flow, hundreds of pixels down the page, and nothing caught it
+   because no test asserts where a dialog is.
+
+   Putting them in `components` restores the order the classes were written
+   expecting: a utility on the element wins over the material underneath it.
    ═══════════════════════════════════════════════════════════════════════ */
+
+@layer components {
 
 /*
  * A pane of glass held above the page.
@@ -704,6 +718,8 @@
     0 1px 0 rgb(255 255 255 / 0.95),
     0 -1px 0 rgb(10 37 64 / 0.14);
 }
+
+} /* @layer components */
 
 @layer utilities {
   .sr-only {

@@ -1,9 +1,14 @@
 import type { Priority, Task } from "@/data";
 import {
+  dayKeyOf,
   dueSortKey,
+  effectiveDueAt,
   formatCompletedDay,
   isDueByEndOfToday,
   isOverdue,
+  shiftDayKey,
+  todayInputValue,
+  weekdayIndex,
 } from "@/lib/dates";
 
 /**
@@ -126,6 +131,109 @@ export function groupByCompletedDay(
   }
 
   return groups;
+}
+
+// ── The activity grid ────────────────────────────────────────────────────
+
+export interface DayActivity {
+  /** `YYYY-MM-DD`, local. Sorts lexicographically. */
+  key: string;
+  /** Finished on this day, whenever it happened to be due. */
+  completed: Task[];
+  /**
+   * Due on this day and not done by the end of it — still open now, or
+   * finished on some later day.
+   */
+  outstanding: Task[];
+}
+
+/**
+ * A year of days, ready to draw as a grid.
+ *
+ * The two counts answer different questions and are deliberately not two
+ * halves of one number:
+ *
+ *   **completed** is bucketed by `completedAt` — the day the work actually
+ *   got done, which is frequently not the day it was meant to.
+ *
+ *   **outstanding** is bucketed by the due date, and asks what that day still
+ *   owed when it ended. A task due Monday and finished Thursday is
+ *   outstanding on Monday *and* completed on Thursday. Counting it as neither,
+ *   or as both on the same square, would make the wall lie in opposite
+ *   directions.
+ *
+ * Days run from the Monday on or before the start of the window to today. The
+ * future is not drawn: a square for a day that has not happened invites the
+ * reading that nothing was done on it.
+ */
+export function selectActivity(
+  tasks: Task[],
+  now: Date,
+  tz: string,
+  weeks = 53,
+): DayActivity[] {
+  const today = todayInputValue(now, tz);
+
+  // Walk back the full window, then back again to that week's Monday, so every
+  // column is a whole week and the weekday rows line up down the grid.
+  const windowStart = shiftDayKey(today, -(weeks * 7 - 1));
+  const start = shiftDayKey(windowStart, -weekdayIndex(windowStart));
+
+  const completedBy = new Map<string, Task[]>();
+  const outstandingBy = new Map<string, Task[]>();
+  const push = (map: Map<string, Task[]>, key: string, task: Task) => {
+    const bucket = map.get(key);
+    if (bucket) bucket.push(task);
+    else map.set(key, [task]);
+  };
+
+  for (const task of tasks) {
+    if (task.isComplete && task.completedAt) {
+      push(completedBy, dayKeyOf(task.completedAt, tz), task);
+    }
+
+    const due = effectiveDueAt(task, tz);
+    if (!due) continue;
+
+    const dueKey = dayKeyOf(due, tz);
+    const settledKey =
+      task.isComplete && task.completedAt ? dayKeyOf(task.completedAt, tz) : null;
+
+    // Not done by the end of its own day: either still open, or finished later.
+    if (settledKey === null || settledKey > dueKey) {
+      push(outstandingBy, dueKey, task);
+    }
+  }
+
+  const days: DayActivity[] = [];
+  for (let key = start; key <= today; key = shiftDayKey(key, 1)) {
+    days.push({
+      key,
+      completed: completedBy.get(key) ?? [],
+      outstanding: outstandingBy.get(key) ?? [],
+    });
+  }
+
+  return days;
+}
+
+/**
+ * Which of five shades a day is drawn in.
+ *
+ * Scaled against the busiest day in the window rather than against a fixed
+ * count, so the wall reads the same for someone finishing three things a week
+ * and someone finishing thirty. Any activity at all is at least level 1 — a
+ * day you did something on must never look like a day you did not.
+ */
+export function activityLevel(count: number, busiest: number): 0 | 1 | 2 | 3 | 4 {
+  if (count === 0) return 0;
+  if (busiest <= 1) return 4;
+
+  const share = count / busiest;
+  if (share <= 0.25) return 1;
+  if (share <= 0.5) return 2;
+  if (share <= 0.75) return 3;
+  return 4;
 }
 
 /** Splits a string on a search term so a match can be marked up as real nodes. */

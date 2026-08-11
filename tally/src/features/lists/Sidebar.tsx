@@ -50,6 +50,7 @@ export function Sidebar({
 
   const activeView = useUIStore((s) => s.activeView);
   const openToday = useUIStore((s) => s.openToday);
+  const openActivity = useUIStore((s) => s.openActivity);
   const openList = useUIStore((s) => s.openList);
   const theme = useUIStore((s) => s.theme);
   const toggleTheme = useUIStore((s) => s.toggleTheme);
@@ -152,6 +153,11 @@ export function Sidebar({
           count={todayCount}
           active={activeView.type === "today"}
           onClick={openToday}
+        />
+        <SidebarRow
+          label="Activity"
+          active={activeView.type === "activity"}
+          onClick={openActivity}
         />
 
         {/* A ruled heading, the way a ledger divides its columns. */}
@@ -319,7 +325,8 @@ function SidebarRow({
   menu,
 }: {
   label: string;
-  count: number;
+  /** Omitted by views that do not count open tasks, like Activity. */
+  count?: number;
   active: boolean;
   onClick: () => void;
   menu?: React.ReactNode;
@@ -344,7 +351,11 @@ function SidebarRow({
         type="button"
         onClick={onClick}
         aria-current={active ? "page" : undefined}
-        aria-label={`${label}, ${count === 1 ? "1 open task" : `${count} open tasks`}`}
+        aria-label={
+          count === undefined
+            ? label
+            : `${label}, ${count === 1 ? "1 open task" : `${count} open tasks`}`
+        }
         className="flex h-full min-w-0 flex-1 items-center gap-2 rounded-md px-2 text-left"
       >
         <span
@@ -355,7 +366,7 @@ function SidebarRow({
         >
           {label}
         </span>
-        {count > 0 ? (
+        {count !== undefined && count > 0 ? (
           <span
             aria-hidden="true"
             className={cn(

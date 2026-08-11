@@ -446,3 +446,48 @@ export function fromPickerValues(
 export function todayInputValue(now: Date, tz: string): string {
   return formatInTimeZone(now, tz, "yyyy-MM-dd");
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Calendar days
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * The local calendar day an instant falls on, as `YYYY-MM-DD`.
+ *
+ * The key the activity grid is built on. It has to be the *local* day: a task
+ * finished at 01:00 in Kolkata happened on the 5th, and bucketing it by its
+ * UTC date would file it under the 4th and put the wrong square on the wall.
+ *
+ * The format sorts lexicographically, which is why the grid can compare days
+ * with `<` and never parse anything twice.
+ */
+export function dayKeyOf(instant: Date | string, tz: string): string {
+  return formatInTimeZone(new Date(instant), tz, "yyyy-MM-dd");
+}
+
+/** `YYYY-MM-DD` shifted by whole calendar days, staying a calendar date. */
+export function shiftDayKey(key: string, days: number): string {
+  const date = localDateFrom(key);
+  date.setDate(date.getDate() + days);
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/** Monday = 0 … Sunday = 6. The week the activity grid is drawn in. */
+export function weekdayIndex(key: string): number {
+  return (localDateFrom(key).getDay() + 6) % 7;
+}
+
+/** "5 August 2026" — the heading on a day's dialog. */
+export function formatDayKeyLong(key: string): string {
+  const date = localDateFrom(key);
+  return date.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+/** "Aug" — the column headings across the top of the grid. */
+export function formatDayKeyMonth(key: string): string {
+  return localDateFrom(key).toLocaleDateString(undefined, { month: "short" });
+}

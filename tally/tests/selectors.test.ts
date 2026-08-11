@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  activityLevel,
   groupByCompletedDay,
+  selectActivity,
   selectCompletedTasksForList,
   selectCompletedToday,
   selectOpenCount,
@@ -228,6 +230,117 @@ test("a completed task with no timestamp is left out rather than invented", () =
     TZ,
   );
   assert.deepEqual(groups, []);
+});
+
+// ── The activity grid ────────────────────────────────────────────────────
+
+/** The day cell for a given key, from a full year of them. */
+const dayOf = (tasks: Task[], key: string) =>
+  selectActivity(tasks, NOW, TZ).find((d) => d.key === key)!;
+
+test("a day holds what was finished on it, whenever it was due", () => {
+  const tasks = [
+    task({
+      title: "Due last week, done today",
+      dueAt: dateOnlyToStorage("2026-07-29"),
+      isComplete: true,
+      completedAt: "2026-08-05T09:00:00.000Z",
+    }),
+  ];
+
+  assert.deepEqual(
+    dayOf(tasks, "2026-08-05").completed.map((t) => t.title),
+    ["Due last week, done today"],
+  );
+});
+
+test("a task finished late is outstanding on its due day and completed on the day it was done", () => {
+  /*
+   * The whole reason the two counts are separate. Filing this task only under
+   * the day it was finished would show a clean week that was not clean; filing
+   * it only under its due date would hide the fact that it eventually got done.
+   */
+  const tasks = [
+    task({
+      title: "Late",
+      dueAt: dateOnlyToStorage("2026-07-29"),
+      isComplete: true,
+      completedAt: "2026-08-05T09:00:00.000Z",
+    }),
+  ];
+
+  assert.deepEqual(
+    dayOf(tasks, "2026-07-29").outstanding.map((t) => t.title),
+    ["Late"],
+  );
+  assert.equal(dayOf(tasks, "2026-07-29").completed.length, 0);
+  assert.equal(dayOf(tasks, "2026-08-05").outstanding.length, 0);
+});
+
+test("a task finished on the day it was due leaves that day owing nothing", () => {
+  const tasks = [
+    task({
+      dueAt: dateOnlyToStorage("2026-08-04"),
+      isComplete: true,
+      completedAt: "2026-08-04T09:00:00.000Z",
+    }),
+  ];
+
+  assert.equal(dayOf(tasks, "2026-08-04").outstanding.length, 0);
+  assert.equal(dayOf(tasks, "2026-08-04").completed.length, 1);
+});
+
+test("a task still open counts against its due day", () => {
+  const tasks = [task({ title: "Never done", dueAt: dateOnlyToStorage("2026-08-03") })];
+  assert.deepEqual(
+    dayOf(tasks, "2026-08-03").outstanding.map((t) => t.title),
+    ["Never done"],
+  );
+});
+
+test("an undated task never appears on the wall", () => {
+  const tasks = [task({ dueAt: null })];
+  const days = selectActivity(tasks, NOW, TZ);
+  assert.equal(
+    days.reduce((n, d) => n + d.completed.length + d.outstanding.length, 0),
+    0,
+  );
+});
+
+test("the day is the user's local one, not UTC", () => {
+  // 20:30 UTC on the 4th is 02:00 on the 5th in Kolkata. Bucketing on the raw
+  // ISO date would put the square one column to the left.
+  const tasks = [
+    task({ isComplete: true, completedAt: "2026-08-04T20:30:00.000Z" }),
+  ];
+  assert.equal(dayOf(tasks, "2026-08-05").completed.length, 1);
+  assert.equal(dayOf(tasks, "2026-08-04").completed.length, 0);
+});
+
+test("the grid ends today and begins on a Monday", () => {
+  const days = selectActivity([], NOW, TZ);
+  assert.equal(days[days.length - 1]!.key, "2026-08-05");
+  assert.equal(new Date(`${days[0]!.key}T00:00:00`).getDay(), 1);
+
+  // The window is 53 weeks, and then the start snaps back to that week's
+  // Monday — up to six days further. Every column is a whole week, which is
+  // the point; the grid is allowed to be 54 columns wide because of it.
+  assert.ok(days.length >= 53 * 7 && days.length <= 53 * 7 + 6, `${days.length} days`);
+});
+
+test("the future is not drawn", () => {
+  const days = selectActivity([], NOW, TZ);
+  assert.ok(days.every((d) => d.key <= "2026-08-05"));
+});
+
+test("shading is relative to the busiest day, and any work is visible", () => {
+  // One task on a day where the best was twelve is still a mark on the wall.
+  assert.equal(activityLevel(1, 12), 1);
+  assert.equal(activityLevel(0, 12), 0);
+  assert.equal(activityLevel(12, 12), 4);
+  assert.equal(activityLevel(6, 12), 2);
+  // A week with a single task on a single day is that week's best.
+  assert.equal(activityLevel(1, 1), 4);
 });
 
 test("splitOnMatch treats markup as literal text, never as a pattern", () => {

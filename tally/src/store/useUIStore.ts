@@ -7,6 +7,7 @@ export type Theme = "mahogany" | "porcelain";
 
 export type ActiveView =
   | { type: "today" }
+  | { type: "activity" }
   | { type: "list"; listId: string }
   | { type: "search" };
 
@@ -47,6 +48,7 @@ interface UIState {
   isShortcutsOpen: boolean;
 
   openToday: () => void;
+  openActivity: () => void;
   openList: (listId: string) => void;
   setSidebarOpen: (open: boolean) => void;
   toggleTheme: () => void;
@@ -82,6 +84,9 @@ export const useUIStore = create<UIState>((set, get) => ({
   isShortcutsOpen: false,
 
   openToday: () => set({ activeView: { type: "today" }, isSidebarOpen: false }),
+
+  openActivity: () =>
+    set({ activeView: { type: "activity" }, isSidebarOpen: false }),
 
   openList: (listId) =>
     set({ activeView: { type: "list", listId }, isSidebarOpen: false }),
