@@ -167,6 +167,7 @@ function Grid({
 
         <div
           role="grid"
+          data-tour="activity-grid"
           aria-label="Task activity by day, one square per day"
           onKeyDown={onKeyDown}
           className="grid grid-flow-col grid-rows-7 gap-[3px]"

@@ -161,3 +161,11 @@ export const KeyboardIcon = (p: IconProps) => (
     <path d="M6.5 10h.01M10 10h.01M13.5 10h.01M17 10h.01M6.5 14h11" />
   </Svg>
 );
+
+/** A compass rose, for the guided tour. */
+export const CompassIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="9" />
+    <path d="M15.5 8.5l-2 5-5 2 2-5z" />
+  </Svg>
+);

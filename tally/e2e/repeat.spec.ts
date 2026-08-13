@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 
 /**
  * Repeating tasks, and the split layout that holds the record of them.

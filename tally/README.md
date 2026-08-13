@@ -82,6 +82,13 @@ and finished Thursday is outstanding on Monday *and* completed on Thursday. A
 day that ended owing something is ringed rather than recoloured, because a
 second hue would compete with the one the whole grid is built on.
 
+**A guided tour.** On a first visit — an empty database, nothing imported —
+the app offers a fourteen-step walk through every feature, spotlighting the
+real interface rather than a set of screenshots. It never advances on its own
+and never touches your data. Skip it and it does not come back; ask for it
+again from the compass in the sidebar footer. Arrow keys move through it, Escape
+leaves.
+
 **Undo, not confirm.** Deleting takes one click and no dialog. A five-second
 undo sits at the bottom of the screen. A confirmation prompt taxes the
 ninety-nine deletions in a hundred that were meant, to guard the one that was
@@ -112,7 +119,7 @@ src/
     bundle.ts        Import validation — the one untrusted input
     local/           IndexedDB (Dexie), plus an in-memory fallback
   store/           Zustand state, optimistic writes, pure selectors
-  features/        tasks/ lists/ today/ activity/ search/ data/
+  features/        tasks/ lists/ today/ activity/ search/ tutorial/ data/
   components/      Generic pieces with no domain knowledge
   lib/             dates, ordering, ids, keyboard, the shared clock
 ```
@@ -172,14 +179,15 @@ falling back to the 28th, a date-only task not sliding a day for users west of
 UTC, and a task finished three weeks late producing one occurrence rather than
 three.
 
-**28 end-to-end tests** run against a production build on Chromium, WebKit and
+**33 end-to-end tests** run against a production build on Chromium, WebKit and
 mobile Safari (Firefox is configured but could not launch in this environment).
 They cover what only a real browser can answer: that IndexedDB survives a
 reload, that Enter genuinely commits, that nothing logs to the console, that
 the app still opens with the network switched off, that ticking a repeating row
 leaves two rows behind and unticking it *after a reload* still withdraws the
-one it created, that the completed column becomes a fold-down below 1280px, and
-that 5,000 tasks do not freeze the list. The two offline tests are
+one it created, that the completed column becomes a fold-down below 1280px, that every
+step of the guided tour lands inside the viewport, and that 5,000 tasks do not
+freeze the list. The two offline tests are
 Chromium-only — Playwright's service worker support elsewhere is partial enough
 that a failure would be the harness's, not Tally's.
 

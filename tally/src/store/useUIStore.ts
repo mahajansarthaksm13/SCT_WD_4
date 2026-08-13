@@ -1,6 +1,9 @@
 "use client";
 
 import { create } from "zustand";
+import { TUTORIAL_STEPS } from "@/features/tutorial/steps";
+
+const TUTORIAL_LAST_STEP = TUTORIAL_STEPS.length - 1;
 
 /** Mahogany is the default ground; porcelain is the same room in daylight. */
 export type Theme = "mahogany" | "porcelain";
@@ -47,6 +50,9 @@ interface UIState {
   viewBeforeSearch: ActiveView | null;
   isShortcutsOpen: boolean;
 
+  isTutorialOpen: boolean;
+  tutorialStep: number;
+
   openToday: () => void;
   openActivity: () => void;
   openList: (listId: string) => void;
@@ -54,6 +60,28 @@ interface UIState {
   toggleTheme: () => void;
   setSearchQuery: (query: string) => void;
   setShortcutsOpen: (open: boolean) => void;
+
+  startTutorial: () => void;
+  setTutorialStep: (step: number) => void;
+  /** Closes the tour and records that it has been offered. */
+  endTutorial: () => void;
+}
+
+const TOUR_KEY = "tally-tour-seen";
+
+/**
+ * Whether the tour has already been offered on this device.
+ *
+ * Read defensively: private mode can refuse localStorage outright, and the
+ * failure mode of assuming "not seen" is showing a tour twice, which is far
+ * better than the failure mode of assuming "seen" and never showing it at all.
+ */
+export function hasSeenTutorial(): boolean {
+  try {
+    return localStorage.getItem(TOUR_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -82,6 +110,8 @@ export const useUIStore = create<UIState>((set, get) => ({
   searchQuery: "",
   viewBeforeSearch: null,
   isShortcutsOpen: false,
+  isTutorialOpen: false,
+  tutorialStep: 0,
 
   openToday: () => set({ activeView: { type: "today" }, isSidebarOpen: false }),
 
@@ -125,4 +155,22 @@ export const useUIStore = create<UIState>((set, get) => ({
   },
 
   setShortcutsOpen: (isShortcutsOpen) => set({ isShortcutsOpen }),
+
+  // ── The tour ───────────────────────────────────────────────────────────
+
+  startTutorial: () => set({ isTutorialOpen: true, tutorialStep: 0 }),
+
+  /** Clamped rather than guarded at the call sites, which are keys and buttons. */
+  setTutorialStep: (step) =>
+    set({ tutorialStep: Math.max(0, Math.min(step, TUTORIAL_LAST_STEP)) }),
+
+  endTutorial: () => {
+    try {
+      localStorage.setItem(TOUR_KEY, "1");
+    } catch {
+      // Private mode. The tour will offer itself again next visit, which is
+      // the right way round to be wrong.
+    }
+    set({ isTutorialOpen: false, tutorialStep: 0 });
+  },
 }));

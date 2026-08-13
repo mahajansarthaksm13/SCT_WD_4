@@ -8,6 +8,7 @@ import {
   MenuTrigger,
 } from "@/components/DropdownMenu";
 import {
+  CompassIcon,
   DownloadIcon,
   KeyboardIcon,
   MoonIcon,
@@ -57,6 +58,7 @@ export function Sidebar({
   const searchQuery = useUIStore((s) => s.searchQuery);
   const setSearchQuery = useUIStore((s) => s.setSearchQuery);
   const setShortcutsOpen = useUIStore((s) => s.setShortcutsOpen);
+  const startTutorial = useUIStore((s) => s.startTutorial);
 
   const mounted = useIsClient();
   const [creating, setCreating] = useState(false);
@@ -126,6 +128,7 @@ export function Sidebar({
           />
           <input
             id={searchId}
+            data-tour="search"
             type="search"
             value={searchDraft}
             placeholder="Search"
@@ -149,12 +152,14 @@ export function Sidebar({
       {/* ── Views and lists ─────────────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto px-3 pb-4">
         <SidebarRow
+          tourId="today"
           label="Today"
           count={todayCount}
           active={activeView.type === "today"}
           onClick={openToday}
         />
         <SidebarRow
+          tourId="activity"
           label="Activity"
           active={activeView.type === "activity"}
           onClick={openActivity}
@@ -244,6 +249,7 @@ export function Sidebar({
             <button
               type="button"
               onClick={() => setCreating(true)}
+            data-tour="new-list"
               className={cn(
                 "flex h-11 w-full items-center gap-2 rounded-md px-2 text-body text-ink-2 lg:h-9",
                 "transition-colors duration-[120ms] hover:bg-surface-sunk hover:text-ink",
@@ -258,7 +264,7 @@ export function Sidebar({
 
       {/* ── Footer ──────────────────────────────────────────────────────── */}
       <div className="border-t border-rule px-3 py-2 shadow-[inset_0_1px_0_var(--edge-light)]">
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1" data-tour="footer">
           <FooterButton
             /*
              * The stored identifiers are still "mahogany" and "porcelain" —
@@ -280,6 +286,9 @@ export function Sidebar({
             ) : (
               <MoonIcon size={15} />
             )}
+          </FooterButton>
+          <FooterButton label="Take the guided tour" onClick={startTutorial}>
+            <CompassIcon size={15} />
           </FooterButton>
           <FooterButton label="Export your tasks as a file" onClick={onExport}>
             <DownloadIcon size={15} />
@@ -318,12 +327,15 @@ export function Sidebar({
 }
 
 function SidebarRow({
+  tourId,
   label,
   count,
   active,
   onClick,
   menu,
 }: {
+  /** `data-tour` anchor, on the views the guided tour points at. */
+  tourId?: string;
   label: string;
   /** Omitted by views that do not count open tasks, like Activity. */
   count?: number;
@@ -333,6 +345,7 @@ function SidebarRow({
 }) {
   return (
     <div
+      data-tour={tourId}
       className={cn(
         "group relative flex h-11 items-center rounded-md pr-1 lg:h-9",
         "transition-[background-color,box-shadow] duration-[140ms]",

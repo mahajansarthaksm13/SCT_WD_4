@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 /**
  * The PRD's stated worst case: five thousand tasks must not freeze the list.

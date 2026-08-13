@@ -3,6 +3,7 @@
 import { Dialog as RadixDialog } from "radix-ui";
 import { useEffect, useMemo, useRef } from "react";
 import { ActivityView } from "@/features/activity/ActivityView";
+import { Tutorial } from "@/features/tutorial/Tutorial";
 import { ListView } from "@/features/lists/ListView";
 import { Sidebar } from "@/features/lists/Sidebar";
 import { SearchView } from "@/features/search/SearchView";
@@ -16,7 +17,7 @@ import { subscribeToOtherTabs } from "@/lib/tabSync";
 import { useNow } from "@/lib/useNow";
 import { selectOpenCount, selectTodayCount } from "@/store/selectors";
 import { useTaskStore } from "@/store/useTaskStore";
-import { useUIStore } from "@/store/useUIStore";
+import { hasSeenTutorial, useUIStore } from "@/store/useUIStore";
 import { MenuIcon } from "./Icon";
 import { LiveRegion } from "./LiveRegion";
 import { ErrorNotice, StorageNotice } from "./Notices";
@@ -38,6 +39,7 @@ export function AppShell() {
   const isSidebarOpen = useUIStore((s) => s.isSidebarOpen);
   const setSidebarOpen = useUIStore((s) => s.setSidebarOpen);
   const searchQuery = useUIStore((s) => s.searchQuery);
+  const startTutorial = useUIStore((s) => s.startTutorial);
 
   const tz = getUserTimezone();
   const now = useNow();
@@ -92,6 +94,23 @@ export function AppShell() {
       openToday();
     }
   }, [status, tasks, tz, inboxId, openList, openToday]);
+
+  /**
+   * The tour offers itself once, on a genuinely first visit.
+   *
+   * Gated on the same `status === "ready"` as the landing rule, so it never
+   * opens over a loading screen, and on `hasSeenTutorial` so it is offered
+   * once per device and then only ever on request. Someone who arrives with
+   * tasks already in the database is not a first-time user — they imported a
+   * file or came back on a second device — so they are left alone.
+   */
+  const hasOfferedTour = useRef(false);
+  useEffect(() => {
+    if (status !== "ready" || hasOfferedTour.current) return;
+    hasOfferedTour.current = true;
+
+    if (tasks.length === 0 && !hasSeenTutorial()) startTutorial();
+  }, [status, tasks.length, startTutorial]);
 
   const activeList = useMemo(
     () =>
@@ -163,7 +182,10 @@ export function AppShell() {
 
       {/* ── Main ───────────────────────────────────────────────────────── */}
       <main className="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <div className="mx-auto w-full max-w-content px-4 pb-24 md:px-6 xl:max-w-content-split">
+        <div
+          data-tour="main"
+          className="mx-auto w-full max-w-content px-4 pb-24 md:px-6 xl:max-w-content-split"
+        >
           <header className="flex items-center gap-3 pb-4 pt-5 md:pt-9">
             <button
               type="button"
@@ -236,6 +258,7 @@ export function AppShell() {
       </main>
 
       <UndoToast />
+      <Tutorial />
       <ShortcutsDialog />
       <LiveRegion />
       {dataTransfer.element}

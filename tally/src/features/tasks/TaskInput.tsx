@@ -72,6 +72,7 @@ export function TaskInput({ listId }: { listId: string | null }) {
         </label>
         <input
           id="tally-capture"
+          data-tour="capture"
           ref={inputRef}
           value={title}
           onChange={(e) => setTitle(e.target.value.slice(0, TITLE_MAX))}
@@ -106,6 +107,7 @@ export function TaskInput({ listId }: { listId: string | null }) {
           <button
             type="button"
             aria-label={dueSummary ?? "Add a due date"}
+            data-tour="due"
             className={cn(
               "absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 md:h-9 md:w-9",
               "items-center justify-center rounded-md",
